@@ -1,4 +1,4 @@
-name: Rust
+name: CI
 
 on:
   push:
@@ -11,12 +11,35 @@ env:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    # QClipz is Windows-only (Win32, DXGI, WASAPI).
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
+
+    - name: Frontend (type-check and build)
+      run: |
+        npm ci
+        npm run build
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri
+
+    # The real ffmpeg sidecar (~220 MB) isn't in the repo; tauri-build only needs the path to exist.
+    - name: Placeholder ffmpeg sidecar
+      shell: bash
+      run: mkdir -p src-tauri/binaries && touch src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe
+
     - name: Build
+      working-directory: src-tauri
       run: cargo build --verbose
+
     - name: Run tests
+      working-directory: src-tauri
       run: cargo test --verbose
