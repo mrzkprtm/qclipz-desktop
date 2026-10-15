@@ -2,7 +2,7 @@ QClipz 0.9.1 fixes recording performance and audio. Update recommended for every
 
 **Download:** `QClipz_0.9.1_x64-setup.exe` below. It updates 0.9.0 in place and installs per user with no admin rights.
 
-> The installer isn't code-signed yet. If Windows shows "Windows protected your PC", click **More info → Run anyway**. SHA-256: `<fill in>`
+> The installer isn't code-signed yet. If Windows shows "Windows protected your PC", click **More info → Run anyway**. SHA-256: `507a7d4ddc383002f8a9b3b5282f6753c398e7c5dc83bc9baa382d893a6be991`
 
 ### Fixed
 - **Low frame rate with audio on.** With system sound or a mic, capture could drop to 3–8 fps and slow other apps (for example, YouTube buffering). Video now records at full speed while audio is captured separately and muxed when you stop.
