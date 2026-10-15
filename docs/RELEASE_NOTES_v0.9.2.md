@@ -2,7 +2,7 @@ QClipz 0.9.2 makes recording start smoothly and run lighter, and adds a new icon
 
 **Download:** `QClipz_0.9.2_x64-setup.exe` below. It updates older versions in place; you can now choose *just for me* or *for everyone* and the install folder.
 
-> The installer isn't code-signed yet. If Windows shows "Windows protected your PC", click **More info → Run anyway**. SHA-256: `<fill in>`
+> The installer isn't code-signed yet. If Windows shows "Windows protected your PC", click **More info → Run anyway**. SHA-256: `a51bcd043c95387de2c139a1e8977465794b29b03532930f54457153f35ae5c3`
 
 ### Fixed
 - **Smooth start.** No more stutter or screen blink right after Record. The floating bar and border are prepared when QClipz starts and appear without taking focus.
