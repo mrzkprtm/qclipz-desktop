@@ -2,7 +2,7 @@ QClipz 0.9.0 is the first public pre-release of a fast screen recorder for Windo
 
 **Download:** `QClipz_0.9.0_x64-setup.exe` below. It installs per user with no admin rights.
 
-> The installer isn't code-signed yet. If Windows shows "Windows protected your PC", click **More info → Run anyway**. SHA-256: `<fill in>`
+> The installer isn't code-signed yet. If Windows shows "Windows protected your PC", click **More info → Run anyway**. SHA-256: `2b9410c53354b1bb2da567d5f312bb8a28ffbec709cf612d1c5bd781097b79ce`
 
 ### Highlights
 - Record full screen, a dragged area (with 16:9 / 9:16 / 1:1 locks and exact sizes) or a single window.
