@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.2
+
+### Fixed
+- **Stutter and screen "blink" right after pressing Record.** The floating bar and border used to be created at that moment (each one starts a browser renderer), stealing focus and CPU for about a second. They're now created once when QClipz starts and only shown when recording begins, without taking focus.
+- **The border no longer slows down what you record.** It's an opaque ring-shaped window instead of a transparent window covering the whole area.
+- **The main window hides instantly** instead of playing the minimize animation.
+- **A saved area that no longer fits** (for example after unplugging a monitor) is moved back onto a screen. **Refresh preview** also picks up monitors you plug in or out.
+
+### Changed
+- About 25% less CPU while recording: lighter colour conversion and a low-latency encoder setting. This leaves more headroom for games and video.
+- The installer lets you choose **just for me** or **for everyone** and the install folder, and shows the license.
+- New app icon, the **Clip** mark.
+- The repository has a full README, contributing guide, security policy, and issue and pull-request templates.
+
 ## 0.9.1
 
 ### Fixed

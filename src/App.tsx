@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { videoDir } from "@tauri-apps/api/path";
-import { availableMonitors, getCurrentWindow } from "@tauri-apps/api/window";
+import { availableMonitors } from "@tauri-apps/api/window";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { ASPECTS } from "./Selector";
@@ -52,6 +52,17 @@ function fitAspect(r: Rect, aspect: number): Rect {
   const width = aspect >= 1 ? r.width : even(r.height * aspect);
   const height = aspect >= 1 ? even(r.width / aspect) : r.height;
   return { x: Math.round(r.x + (r.width - width) / 2), y: Math.round(r.y + (r.height - height) / 2), width, height };
+}
+
+// A saved area that no longer fits any screen (a monitor was unplugged) is shrunk to
+// fit the main screen and centered on it.
+function keepOnScreen(r: Rect, screens: Screen[]): Rect {
+  const fits = (s: Screen) => r.x >= s.x && r.y >= s.y && r.x + r.width <= s.x + s.width && r.y + r.height <= s.y + s.height;
+  if (!screens.length || screens.some(fits)) return r;
+  const s = screens.find((m) => m.main) ?? screens[0];
+  const width = even(Math.min(r.width, s.width));
+  const height = even(Math.min(r.height, s.height));
+  return { x: s.x + Math.floor((s.width - width) / 2), y: s.y + Math.floor((s.height - height) / 2), width, height };
 }
 
 function stamp() {
@@ -145,7 +156,27 @@ export default function App() {
 
   // Only the newest reply wins, so overlapping refreshes can't show a stale file.
   const snapSeq = useRef(0);
+  function loadScreens() {
+    availableMonitors()
+      .then((ms) => {
+        if (!ms.length) return;
+        const list = ms.map((m, i) => ({
+          name: `Screen ${i + 1}`,
+          main: m.position.x === 0 && m.position.y === 0,
+          x: m.position.x,
+          y: m.position.y,
+          width: m.size.width,
+          height: m.size.height,
+        }));
+        setScreens(list);
+        setScreenIdx((i) => (i < list.length ? i : 0));
+        setArea((r) => keepOnScreen(r, list));
+      })
+      .catch(() => {}); // not running inside Tauri
+  }
+
   async function takeSnapshot() {
+    loadScreens(); // monitors may have been plugged in or out
     const seq = ++snapSeq.current;
     setSnapping(true);
     try {
@@ -182,20 +213,6 @@ export default function App() {
   const actions = useRef({ record: (_?: { area: Rect }) => {}, stop: () => {} });
 
   useEffect(() => {
-    availableMonitors()
-      .then((ms) => {
-        if (!ms.length) return;
-        setScreens(ms.map((m, i) => ({
-          name: `Screen ${i + 1}`,
-          main: m.position.x === 0 && m.position.y === 0,
-          x: m.position.x,
-          y: m.position.y,
-          width: m.size.width,
-          height: m.size.height,
-        })));
-        setScreenIdx((i) => (i < ms.length ? i : 0));
-      })
-      .catch(() => {}); // not running inside Tauri
     takeSnapshot();
     if (!folder) videoDir().then((d) => setFolder(`${d.replace(/[\\/]$/, "")}\\QClipz`)).catch(() => {});
 
@@ -257,13 +274,13 @@ export default function App() {
           outputShortSide: resolution || null,
           drawMouse,
           showBorder,
+          hideMain: hideWhileRecording || !!override,
         },
       });
       setRecArea(started.area);
       setStartedAt(Date.now());
       setNow(Date.now());
       setPhase("recording");
-      if (hideWhileRecording || override) getCurrentWindow().minimize();
     } catch (e) {
       setPhase("idle");
       invoke("show_main");
@@ -594,7 +611,7 @@ export default function App() {
           )}
           <label className="switch"><span>Show cursor</span><input type="checkbox" checked={drawMouse} onChange={(e) => setDrawMouse(e.target.checked)} /><span className="track" /></label>
           <label className="switch"><span>Red border while recording</span><input type="checkbox" checked={showBorder} onChange={(e) => setShowBorder(e.target.checked)} /><span className="track" /></label>
-          <label className="switch"><span>Minimize QClipz while recording</span><input type="checkbox" checked={hideWhileRecording} onChange={(e) => setHide(e.target.checked)} /><span className="track" /></label>
+          <label className="switch"><span>Hide QClipz while recording</span><input type="checkbox" checked={hideWhileRecording} onChange={(e) => setHide(e.target.checked)} /><span className="track" /></label>
 
           <h2>Audio</h2>
           <label className="switch">

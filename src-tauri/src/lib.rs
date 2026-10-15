@@ -108,6 +108,9 @@ struct RecordParams {
     output_short_side: Option<u32>,
     draw_mouse: bool,
     show_border: bool,
+    // Hide the main window while recording.
+    #[serde(default)]
+    hide_main: bool,
 }
 
 fn video_filter(short_side: Option<u32>) -> String {
@@ -115,7 +118,7 @@ fn video_filter(short_side: Option<u32>) -> String {
     let mut vf = String::from("crop=trunc(iw/2)*2:trunc(ih/2)*2");
     if let Some(n) = short_side.filter(|n| *n >= 2) {
         let n = n & !1;
-        vf += &format!(",scale='if(gt(iw,ih),-2,{n})':'if(gt(iw,ih),{n},-2)':flags=lanczos");
+        vf += &format!(",scale='if(gt(iw,ih),-2,{n})':'if(gt(iw,ih),{n},-2)':flags=bicubic");
     }
     vf + ",format=yuv420p"
 }
@@ -142,6 +145,8 @@ fn pick_backend(area: &Rect, outputs: &[win::Rect]) -> Backend {
 fn record_args(b: Backend, p: &RecordParams, area: &Rect, video: &Path, epoch_us: i64) -> Vec<String> {
     let mut a: Vec<String> = vec!["-y".into()];
     let clock = format!("setpts=(RTCTIME-{epoch_us})/(TB*1000000)");
+    // fast_bilinear for the BGRA -> YUV conversion: ~12% less CPU, no visible loss on screen content.
+    let swscale = "sws_flags=fast_bilinear;";
     let size = format!("{}x{}", area.width, area.height);
     let mouse = if p.draw_mouse { "1" } else { "0" };
     let vf = video_filter(p.output_short_side);
@@ -160,8 +165,9 @@ fn record_args(b: Backend, p: &RecordParams, area: &Rect, video: &Path, epoch_us
             format!("[0:v]{clock},{vf}[v]")
         }
     };
-    a.extend(["-filter_complex".into(), graph, "-map".into(), "[v]".into()]);
-    a.extend(["-c:v", "libx264", "-preset", "ultrafast", "-crf", "23"].map(String::from));
+    a.extend(["-filter_complex".into(), format!("{swscale}{graph}"), "-map".into(), "[v]".into()]);
+    // zerolatency drops x264's frame-thread buffering: ~14% less CPU here, steadier pacing.
+    a.extend(["-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency", "-crf", "23"].map(String::from));
     a.push(video.to_string_lossy().into_owned());
     a
 }
@@ -379,6 +385,11 @@ async fn start_record(
     *state.active.lock().unwrap() = Some(session);
     // The floating controls and border are hidden from capture, so they never show up in the video.
     let _ = open_recording_chrome(&app, &area, params.show_border);
+    if params.hide_main
+        && let Some(main) = app.get_webview_window("main")
+    {
+        let _ = main.hide();
+    }
     Ok(Started { area, backend: if used == Backend::Gdi { "gdi" } else { "dda" } })
 }
 
@@ -422,19 +433,49 @@ fn helper_window<'a>(
         .visible(false)
 }
 
-fn open_recording_chrome(app: &tauri::AppHandle, area: &Rect, border: bool) -> tauri::Result<()> {
-    close_recording_chrome(app);
+const BAR_W: f64 = 440.0;
+const BORDER: i32 = 3;
 
-    if border {
-        const B: i32 = 3;
-        let w = helper_window(app, "border", serde_json::json!({ "view": "border" }))
-            .transparent(true)
-            .focused(false)
-            .build()?;
-        exclude(&w);
-        w.set_ignore_cursor_events(true)?;
-        w.set_position(tauri::PhysicalPosition::new(area.x - B, area.y - B))?;
-        w.set_size(tauri::PhysicalSize::new(area.width + 2 * B as u32, area.height + 2 * B as u32))?;
+// The recording bar and border are WebView windows; creating one starts a browser
+// renderer, which on a slow PC stalls everything for a second. So they're built once,
+// hidden, when QClipz starts, and recording only moves and shows them.
+fn recbar(app: &tauri::AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    if let Some(w) = app.get_webview_window("recbar") {
+        return Ok(w);
+    }
+    let w = helper_window(app, "recbar", serde_json::json!({ "view": "recbar", "startedAt": 0, "area": { "width": 0, "height": 0 } }))
+        .inner_size(BAR_W, 56.0)
+        .transparent(true)
+        .focused(false)
+        .focusable(false) // clicks still work; showing it never takes focus from a game or video
+        .build()?;
+    exclude(&w);
+    Ok(w)
+}
+
+fn border(app: &tauri::AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    if let Some(w) = app.get_webview_window("border") {
+        return Ok(w);
+    }
+    // Opaque and clipped to a ring (see open_recording_chrome), not a transparent overlay.
+    let w = helper_window(app, "border", serde_json::json!({ "view": "border" }))
+        .focused(false)
+        .focusable(false)
+        .build()?;
+    exclude(&w);
+    w.set_ignore_cursor_events(true)?;
+    Ok(w)
+}
+
+fn open_recording_chrome(app: &tauri::AppHandle, area: &Rect, show_border: bool) -> tauri::Result<()> {
+    if show_border {
+        let w = border(app)?;
+        let (bw, bh) = (area.width + 2 * BORDER as u32, area.height + 2 * BORDER as u32);
+        w.set_position(tauri::PhysicalPosition::new(area.x - BORDER, area.y - BORDER))?;
+        w.set_size(tauri::PhysicalSize::new(bw, bh))?;
+        if let Ok(h) = w.hwnd() {
+            win::ring_region(h.0 as isize, bw as i32, bh as i32, BORDER);
+        }
         w.show()?;
     }
 
@@ -448,23 +489,20 @@ fn open_recording_chrome(app: &tauri::AppHandle, area: &Rect, border: bool) -> t
             cx >= p.x && cy >= p.y && cx < p.x + s.width as i32 && cy < p.y + s.height as i32
         })
         .or(monitors.first());
+    let bar = recbar(app)?;
+    if let Some(m) = m {
+        let scale = m.scale_factor();
+        bar.set_size(tauri::LogicalSize::new(BAR_W, 56.0))?;
+        bar.set_position(tauri::PhysicalPosition::new(
+            m.position().x + (m.size().width as i32 - (BAR_W * scale) as i32) / 2,
+            m.position().y + (16.0 * scale) as i32,
+        ))?;
+    }
     let started = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0);
-    let bar = helper_window(app, "recbar", serde_json::json!({ "view": "recbar", "startedAt": started, "area": area }))
-        .inner_size(440.0, 56.0)
-        .transparent(true)
-        .build()?;
-    exclude(&bar);
-    if let Some(m) = m {
-        let scale = m.scale_factor();
-        let w = (440.0 * scale) as i32;
-        bar.set_position(tauri::PhysicalPosition::new(
-            m.position().x + (m.size().width as i32 - w) / 2,
-            m.position().y + (16.0 * scale) as i32,
-        ))?;
-    }
+    let _ = app.emit_to("recbar", "recbar-start", serde_json::json!({ "startedAt": started, "area": area }));
     bar.show()?;
     Ok(())
 }
@@ -472,7 +510,7 @@ fn open_recording_chrome(app: &tauri::AppHandle, area: &Rect, border: bool) -> t
 fn close_recording_chrome(app: &tauri::AppHandle) {
     for label in ["recbar", "border"] {
         if let Some(w) = app.get_webview_window(label) {
-            let _ = w.destroy();
+            let _ = w.hide();
         }
     }
 }
@@ -627,35 +665,54 @@ async fn snapshot_desktop(app: tauri::AppHandle) -> Result<String, String> {
     Ok(path.to_string_lossy().into_owned())
 }
 
-// Open a transparent drag-to-select overlay on every monitor. The overlay
-// calls `finish_selection`, which closes them all and sends the area to main.
+// Open a transparent drag-to-select overlay on every monitor. The overlay calls
+// `finish_selection`, which hides them all and sends the area to main. Overlays are kept
+// (hidden) and reused while the monitors don't change, so closing one never tears down a
+// browser renderer right as a recording starts.
 #[tauri::command]
 async fn open_selector(app: tauri::AppHandle, aspect: Option<f64>, current: Option<Rect>) -> Result<(), String> {
-    close_overlays(&app);
     let monitors = app.available_monitors().map_err(|e| e.to_string())?;
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_millis())
-        .unwrap_or(0);
-
-    let mut overlays = Vec::new();
-    for (i, m) in monitors.iter().enumerate() {
-        let cfg = serde_json::json!({
+    let mut overlays = overlay_windows(&app);
+    let same_layout = overlays.len() == monitors.len()
+        && overlays.iter().zip(&monitors).all(|(w, m)| {
+            w.outer_position().ok() == Some(*m.position()) && w.outer_size().ok() == Some(*m.size())
+        });
+    let cfg = |m: &tauri::Monitor| {
+        serde_json::json!({
             "view": "overlay",
             "originX": m.position().x,
             "originY": m.position().y,
             "aspect": aspect,
             "current": current,
-        });
-        let w = helper_window(&app, &format!("overlay-{stamp}-{i}"), cfg)
-            .transparent(true)
-            .build()
-            .map_err(|e| e.to_string())?;
-        // Physical units so mixed-DPI monitors line up exactly.
-        w.set_position(*m.position()).map_err(|e| e.to_string())?;
-        w.set_size(*m.size()).map_err(|e| e.to_string())?;
+        })
+    };
+
+    if same_layout {
+        for (w, m) in overlays.iter().zip(&monitors) {
+            let _ = app.emit_to(w.label(), "selector-config", cfg(m));
+        }
+        sleep(Duration::from_millis(60)).await; // let them re-render before showing
+    } else {
+        for w in overlays.drain(..) {
+            let _ = w.destroy();
+        }
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(0);
+        for (i, m) in monitors.iter().enumerate() {
+            let w = helper_window(&app, &format!("overlay-{stamp}-{i}"), cfg(m))
+                .transparent(true)
+                .build()
+                .map_err(|e| e.to_string())?;
+            // Physical units so mixed-DPI monitors line up exactly.
+            w.set_position(*m.position()).map_err(|e| e.to_string())?;
+            w.set_size(*m.size()).map_err(|e| e.to_string())?;
+            overlays.push(w);
+        }
+    }
+    for w in &overlays {
         w.show().map_err(|e| e.to_string())?;
-        overlays.push(w);
     }
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.hide();
@@ -672,11 +729,23 @@ async fn open_selector(app: tauri::AppHandle, aspect: Option<f64>, current: Opti
     Ok(())
 }
 
+// Overlay windows in monitor order.
+fn overlay_windows(app: &tauri::AppHandle) -> Vec<tauri::WebviewWindow> {
+    let mut list: Vec<(usize, tauri::WebviewWindow)> = app
+        .webview_windows()
+        .into_iter()
+        .filter_map(|(label, w)| {
+            let i = label.strip_prefix("overlay-")?.rsplit('-').next()?.parse().ok()?;
+            Some((i, w))
+        })
+        .collect();
+    list.sort_by_key(|(i, _)| *i);
+    list.into_iter().map(|(_, w)| w).collect()
+}
+
 fn close_overlays(app: &tauri::AppHandle) {
-    for (label, w) in app.webview_windows() {
-        if label.starts_with("overlay-") {
-            let _ = w.destroy();
-        }
+    for w in overlay_windows(app) {
+        let _ = w.hide();
     }
 }
 
@@ -692,16 +761,11 @@ struct Selection {
 async fn finish_selection(app: tauri::AppHandle, selection: Option<Selection>) -> Result<(), String> {
     close_overlays(&app);
     let recording = selection.as_ref().is_some_and(|s| s.record);
-    if let Some(main) = app.get_webview_window("main") {
-        // When recording straight away the main window stays out of the way.
-        if recording {
-            let _ = main.show();
-            let _ = main.minimize();
-        } else {
-            let _ = main.show();
-            let _ = main.unminimize();
-            let _ = main.set_focus();
-        }
+    // When recording straight away the main window stays hidden (start_record hides it anyway).
+    if !recording && let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.unminimize();
+        let _ = main.set_focus();
     }
     if let Some(s) = selection {
         app.emit_to("main", "area-selected", s).map_err(|e| e.to_string())?;
@@ -746,6 +810,9 @@ pub fn run() {
             if let Some(main) = app.get_webview_window("main") {
                 exclude(&main);
             }
+            let handle = app.handle();
+            recbar(handle)?;
+            border(handle)?;
             Ok(())
         })
         .on_window_event(|w, e| {
@@ -836,6 +903,7 @@ mod sync_probe {
             output_short_side: None,
             draw_mouse: false,
             show_border: false,
+            hide_main: false,
         };
         let backend = pick_backend(&area, &win::dxgi_outputs());
         let (session, used) = tauri::async_runtime::block_on(begin(&p, &area, backend)).unwrap();

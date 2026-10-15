@@ -2,7 +2,7 @@
 // so they never appear in the video.
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { emitTo } from "@tauri-apps/api/event";
+import { emitTo, listen } from "@tauri-apps/api/event";
 import { IconGrip, IconRestore, IconStop } from "./icons";
 import "./Chrome.css";
 
@@ -17,13 +17,23 @@ export function timecode(ms: number) {
   return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
 }
 
-export function RecBar({ cfg }: { cfg: RecBarConfig }) {
+export function RecBar({ cfg: initial }: { cfg: RecBarConfig }) {
+  const [cfg, setCfg] = useState(initial);
   const [now, setNow] = useState(Date.now());
   const [stopping, setStopping] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(id);
+    // The bar is created once at launch and reused: each recording sends its start time.
+    const un = listen<RecBarConfig>("recbar-start", (e) => {
+      setCfg(e.payload);
+      setNow(Date.now());
+      setStopping(false);
+    });
+    return () => {
+      clearInterval(id);
+      un.then((f) => f());
+    };
   }, []);
 
   function stop() {

@@ -1,0 +1,76 @@
+name: Bug report
+description: Something doesn't work, looks wrong, or records badly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time! The more of this you fill in, the faster it gets fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: "I dragged a 9:16 area on my second monitor, pressed R, and the recording was black."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Area mode → Select on screen
+        2. Lock 9:16, drag on monitor 2
+        3. Press R, record 10 seconds, Stop
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: QClipz version
+      placeholder: "0.9.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: What were you recording?
+      options:
+        - Full screen
+        - Area
+        - Window
+        - Not recording-related
+    validations:
+      required: true
+  - type: checkboxes
+    id: audio
+    attributes:
+      label: Audio options that were on
+      options:
+        - label: System sound
+        - label: Microphone
+        - label: Boost quiet audio
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Press Win+R, type `winver`, and copy the version and build.
+      placeholder: "Windows 11 23H2 (build 22631)"
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: CPU and GPU
+      placeholder: "Intel i5-2540M, Intel HD 3000"
+  - type: input
+    id: monitors
+    attributes:
+      label: Monitors and display scaling
+      placeholder: "1920×1080 at 100% + 1366×768 at 125%"
+  - type: textarea
+    id: log
+    attributes:
+      label: FFmpeg log
+      description: Paste or attach `%TEMP%\qclipz-ffmpeg.log` from right after the problem happened.
+      render: text

@@ -87,9 +87,9 @@ html.helper #root {
   .recbar-sign { animation: none; }
 }
 
-.rec-border {
-  position: fixed;
-  inset: 0;
-  border: 3px solid var(--tally-red);
-  pointer-events: none;
+html.view-border,
+html.view-border body,
+html.view-border #root {
+  background: var(--tally-red) !important;
 }
+.rec-border { position: fixed; inset: 0; background: var(--tally-red); pointer-events: none; }

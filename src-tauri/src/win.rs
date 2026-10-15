@@ -255,7 +255,8 @@ pub fn raise_topmost(h: Hwnd) {
     const SWP_NOSIZE: u32 = 0x1;
     const SWP_NOMOVE: u32 = 0x2;
     const SWP_SHOWWINDOW: u32 = 0x40;
-    unsafe { SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW) };
+    const SWP_NOACTIVATE: u32 = 0x10;
+    unsafe { SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE) };
 }
 
 #[link(name = "kernel32")]
@@ -270,4 +271,32 @@ pub fn lower_priority(child: &std::process::Child) {
     use std::os::windows::io::AsRawHandle;
     const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x4000;
     unsafe { SetPriorityClass(child.as_raw_handle() as isize, BELOW_NORMAL_PRIORITY_CLASS) };
+}
+
+#[link(name = "gdi32")]
+unsafe extern "system" {
+    fn CreateRectRgn(l: i32, t: i32, r: i32, b: i32) -> isize;
+    fn CombineRgn(dest: isize, a: isize, b: isize, mode: i32) -> i32;
+    fn DeleteObject(obj: isize) -> i32;
+}
+#[link(name = "user32")]
+unsafe extern "system" {
+    fn SetWindowRgn(h: Hwnd, rgn: isize, redraw: i32) -> i32;
+}
+
+// Clip a window to a hollow frame `thickness` px wide. Nothing of the window then sits
+// over the area inside, so the desktop compositor doesn't have to blend it over the
+// content being recorded (that cost smoothness with a transparent full-area window).
+pub fn ring_region(h: Hwnd, width: i32, height: i32, thickness: i32) {
+    const RGN_DIFF: i32 = 4;
+    unsafe {
+        let outer = CreateRectRgn(0, 0, width, height);
+        let inner = CreateRectRgn(thickness, thickness, width - thickness, height - thickness);
+        let ring = CreateRectRgn(0, 0, 0, 0);
+        CombineRgn(ring, outer, inner, RGN_DIFF);
+        DeleteObject(outer);
+        DeleteObject(inner);
+        // The system owns `ring` from here on.
+        SetWindowRgn(h, ring, 1);
+    }
 }
