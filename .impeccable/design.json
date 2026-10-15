@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T16:57:10Z",
+  "title": "Design System: QClipz",
+  "extensions": {
+    "colorMeta": {
+      "n0": { "role": "neutral", "displayName": "Studio Black", "canonical": "#0e0c0d", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n1": { "role": "neutral", "displayName": "Camera Body", "canonical": "#151213", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n2": { "role": "neutral", "displayName": "Rail Graphite", "canonical": "#1c1819", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n3": { "role": "neutral", "displayName": "Raised Graphite", "canonical": "#262122", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n4": { "role": "neutral", "displayName": "Edge Graphite", "canonical": "#332c2d", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n5": { "role": "neutral", "displayName": "Hover Edge", "canonical": "#4a4142", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n6": { "role": "neutral", "displayName": "Dim Ash", "canonical": "#6f6566", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n7": { "role": "neutral", "displayName": "Muted Ash", "canonical": "#a69b9c", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n8": { "role": "neutral", "displayName": "Soft Paper", "canonical": "#d9d0d0", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "n9": { "role": "neutral", "displayName": "Paper White", "canonical": "#f6f0ee", "tonalRamp": ["#0e0c0d", "#151213", "#1c1819", "#262122", "#332c2d", "#4a4142", "#6f6566", "#a69b9c", "#d9d0d0", "#f6f0ee"] },
+      "tally-red": { "role": "primary", "displayName": "Live Tally Red", "canonical": "#ff2d3d", "tonalRamp": ["oklch(15% 0.06 24)", "oklch(26% 0.1 24)", "oklch(38% 0.15 24)", "oklch(50% 0.2 24)", "oklch(64% 0.24 24)", "oklch(74% 0.17 24)", "oklch(85% 0.09 24)", "oklch(95% 0.03 24)"] },
+      "tally-red-wash": { "role": "primary", "displayName": "Live Wash", "canonical": "rgba(255, 45, 61, 0.14)" },
+      "lit": { "role": "primary", "displayName": "Lit Sign Field", "canonical": "#c91726", "tonalRamp": ["oklch(15% 0.06 25)", "oklch(26% 0.1 25)", "oklch(38% 0.15 25)", "oklch(52% 0.2 25)", "oklch(64% 0.2 25)", "oklch(74% 0.15 25)", "oklch(85% 0.08 25)", "oklch(95% 0.03 25)"] },
+      "lit-letters": { "role": "primary", "displayName": "Lit Lettering", "canonical": "#ffffff" },
+      "tally-green": { "role": "secondary", "displayName": "Armed Tally Green", "canonical": "#2bd46a", "tonalRamp": ["oklch(15% 0.05 150)", "oklch(26% 0.09 150)", "oklch(38% 0.13 150)", "oklch(52% 0.17 150)", "oklch(64% 0.19 150)", "oklch(77% 0.2 150)", "oklch(87% 0.12 150)", "oklch(95% 0.05 150)"] },
+      "tally-green-wash": { "role": "secondary", "displayName": "Armed Wash", "canonical": "rgba(43, 212, 106, 0.12)" },
+      "tally-green-ink": { "role": "secondary", "displayName": "Tally Ink", "canonical": "#062611" },
+      "amber": { "role": "tertiary", "displayName": "Advice Amber", "canonical": "#ffb020", "tonalRamp": ["oklch(15% 0.04 75)", "oklch(26% 0.07 75)", "oklch(38% 0.1 75)", "oklch(52% 0.13 75)", "oklch(66% 0.16 75)", "oklch(81% 0.17 75)", "oklch(89% 0.1 75)", "oklch(96% 0.04 75)"] },
+      "glass-off": { "role": "neutral", "displayName": "Unlit Glass", "canonical": "#2a0e11", "tonalRamp": ["oklch(15% 0.04 18)", "oklch(20% 0.05 18)", "oklch(26% 0.06 18)", "oklch(38% 0.09 18)", "oklch(52% 0.12 18)", "oklch(66% 0.1 18)", "oklch(82% 0.06 18)", "oklch(95% 0.02 18)"] },
+      "glass-off-rim": { "role": "neutral", "displayName": "Unlit Glass Rim", "canonical": "#4a1a1f" },
+      "letters-off": { "role": "neutral", "displayName": "Unlit Lettering", "canonical": "#c4434d" },
+      "letters-off-sub": { "role": "neutral", "displayName": "Unlit Sub Line", "canonical": "#e8838b" },
+      "scrim": { "role": "neutral", "displayName": "Desktop Scrim", "canonical": "rgba(8, 6, 7, 0.55)" }
+    },
+    "typographyMeta": {
+      "sign": { "displayName": "Sign", "purpose": "ON AIR lettering and the lit timecode (tracking tightens to 0.06em when lit)." },
+      "sign-hint": { "displayName": "Sign Hint", "purpose": "Centered instruction on the drag-select overlay." },
+      "brand": { "displayName": "Brand", "purpose": "QClipz wordmark; the recording bar timecode at the same size." },
+      "heading": { "displayName": "Heading", "purpose": "Rail section heads." },
+      "tag": { "displayName": "Tag", "purpose": "Frame size tags, screen tags, window-cell app names (uppercase there)." },
+      "body": { "displayName": "Body", "purpose": "All running UI text." },
+      "control": { "displayName": "Control", "purpose": "Button, segment and field labels." },
+      "small": { "displayName": "Small", "purpose": "Hints, meta, advice, summary line, ON AIR sub line." },
+      "key": { "displayName": "Key", "purpose": "Keyboard hints, 1px currentColor outline." }
+    },
+    "shadows": [
+      { "name": "lamp-armed", "value": "0 0 8px var(--tally-green)", "purpose": "An armed lamp (6px inside a selected segment)." },
+      { "name": "lamp-live", "value": "0 0 10px var(--tally-red)", "purpose": "A live lamp." },
+      { "name": "sign-lit", "value": "0 8px 34px rgba(255, 45, 61, 0.45), 0 0 0 1px rgba(255, 45, 61, 0.35)", "purpose": "The lit ON AIR lightbox." },
+      { "name": "sign-lit-small", "value": "0 0 14px rgba(255, 45, 61, 0.55)", "purpose": "The recording bar's ON AIR sign." },
+      { "name": "sign-letter-glow", "value": "text-shadow: 0 0 16px rgba(255, 120, 130, 0.9)", "purpose": "Lettering on the lit ON AIR." },
+      { "name": "floating-panel", "value": "0 10px 30px rgba(0, 0, 0, 0.45)", "purpose": "Toolbars floating over the desktop only." },
+      { "name": "scrim-cutout", "value": "0 0 0 100vmax rgba(8, 6, 7, 0.55)", "purpose": "Dims everything outside a selection or crop." },
+      { "name": "selected-ring", "value": "inset 0 0 0 1px var(--n4)", "purpose": "Selected segment edge." },
+      { "name": "live-ring", "value": "inset 0 0 0 1px var(--tally-red)", "purpose": "Doubles the monitor's red border while live." }
+    ],
+    "motion": [
+      { "name": "switch", "value": "90ms steps(2, end)", "purpose": "Every state change: background, border, color, knob transform. Hard relay, no fades." },
+      { "name": "lamp-warmup", "value": "380ms steps(1, end); brightness 0.35 > 1 > 0.5 > 1.05 > 0.8 > 1", "purpose": "A sign striking on (lit ON AIR, recording bar sign). Removed under prefers-reduced-motion." },
+      { "name": "press", "value": "translateY(1px)", "purpose": "ON AIR lightbox :active." }
+    ],
+    "breakpoints": [
+      { "name": "rail-narrow", "value": "1000px", "purpose": "Below this the rail narrows from 312px to 280px." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default panel-switch button, with ghost and danger variants.",
+      "html": "<div style=\"display:flex;gap:8px;padding:16px;background:#1c1819\"><button class=\"ds-btn\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5.5 2.5v11a1 1 0 0 0 1 1h11M2.5 5.5h11a1 1 0 0 1 1 1v11\"/></svg>Crop</button><button class=\"ds-btn ds-btn-ghost\">Refresh preview</button><button class=\"ds-btn ds-btn-danger\">Delete</button></div>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; gap:7px; height:34px; padding:0 14px; border-radius:6px; border:1px solid var(--n4, #332c2d); background:var(--n2, #1c1819); color:var(--n9, #f6f0ee); font:500 14px/1.45 var(--font-ui, 'Barlow', 'Segoe UI', sans-serif); cursor:pointer; transition:background 90ms steps(2,end), border-color 90ms steps(2,end); } .ds-btn:hover { background:var(--n3, #262122); border-color:var(--n5, #4a4142); } .ds-btn:focus-visible { outline:2px solid var(--tally-green, #2bd46a); outline-offset:2px; } .ds-btn-ghost { background:transparent; border-color:transparent; color:var(--n8, #d9d0d0); } .ds-btn-ghost:hover { background:var(--n3, #262122); border-color:transparent; } .ds-btn-danger:hover { color:var(--tally-red, #ff2d3d); border-color:var(--tally-red, #ff2d3d); }"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Recessed well for selects and number inputs; green border on focus.",
+      "html": "<div style=\"padding:16px;background:#1c1819\"><input class=\"ds-field\" value=\"1080\" aria-label=\"Width\"></div>",
+      "css": ".ds-field { height:34px; padding:0 10px; width:120px; border-radius:6px; border:1px solid var(--n4, #332c2d); background:var(--n0, #0e0c0d); color:var(--n9, #f6f0ee); caret-color:var(--tally-green, #2bd46a); font:400 14px var(--font-ui, 'Barlow', 'Segoe UI', sans-serif); font-variant-numeric:tabular-nums; outline:none; } .ds-field:hover { border-color:var(--n5, #4a4142); } .ds-field:focus-visible { border-color:var(--tally-green, #2bd46a); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented",
+      "description": "Source tabs, aspect, fps and screen pickers; selected segment lifts to n3 and its lamp arms.",
+      "html": "<div style=\"padding:16px;background:#151213\"><div class=\"ds-seg\"><button aria-pressed=\"false\"><span class=\"ds-lamp\"></span>Full screen</button><button aria-pressed=\"true\"><span class=\"ds-lamp\"></span>Area</button><button aria-pressed=\"false\"><span class=\"ds-lamp\"></span>Window</button></div></div>",
+      "css": ".ds-seg { display:inline-flex; padding:3px; gap:2px; border-radius:8px; background:var(--n0, #0e0c0d); border:1px solid var(--n3, #262122); } .ds-seg button { display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 11px; border:0; border-radius:5px; background:transparent; color:var(--n7, #a69b9c); font:500 14px var(--font-ui, 'Barlow', 'Segoe UI', sans-serif); cursor:pointer; transition:background 90ms steps(2,end), color 90ms steps(2,end); } .ds-seg button:hover { color:var(--n9, #f6f0ee); } .ds-seg button:focus-visible { outline:2px solid var(--tally-green, #2bd46a); outline-offset:2px; } .ds-seg button[aria-pressed=true] { background:var(--n3, #262122); color:var(--n9, #f6f0ee); box-shadow:inset 0 0 0 1px var(--n4, #332c2d); } .ds-lamp { width:8px; height:8px; border-radius:50%; background:var(--n5, #4a4142); } .ds-seg button[aria-pressed=true] .ds-lamp { background:var(--tally-green, #2bd46a); box-shadow:0 0 6px var(--tally-green, #2bd46a); }"
+    },
+    {
+      "name": "Toggle Switch",
+      "kind": "custom",
+      "refersTo": "switch-track",
+      "description": "Settings toggle; the track lights tally green when on.",
+      "html": "<label class=\"ds-switch\"><span>Show cursor</span><input type=\"checkbox\" checked><span class=\"ds-track\"></span></label>",
+      "css": ".ds-switch { display:flex; align-items:center; justify-content:space-between; gap:12px; width:260px; min-height:34px; padding:0 16px; background:var(--n2, #1c1819); color:var(--n8, #d9d0d0); font:400 14px var(--font-ui, 'Barlow', 'Segoe UI', sans-serif); cursor:pointer; } .ds-switch input { position:absolute; opacity:0; pointer-events:none; } .ds-track { position:relative; flex:none; width:34px; height:20px; border-radius:20px; background:var(--n4, #332c2d); transition:background 90ms steps(2,end); } .ds-track::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--n8, #d9d0d0); transition:transform 90ms steps(2,end), background 90ms steps(2,end); } .ds-switch input:checked + .ds-track { background:var(--tally-green, #2bd46a); } .ds-switch input:checked + .ds-track::after { transform:translateX(14px); background:var(--tally-green-ink, #062611); } .ds-switch input:focus-visible + .ds-track { outline:2px solid var(--tally-green, #2bd46a); outline-offset:2px; }"
+    },
+    {
+      "name": "Window Cell",
+      "kind": "card",
+      "refersTo": "window-cell",
+      "description": "Whole-cell window picker entry; selected gets a green border, wash and armed lamp.",
+      "html": "<div style=\"display:flex;gap:8px;padding:14px;background:#0e0c0d\"><button class=\"ds-cell\"><span class=\"ds-cell-exe\"><span class=\"ds-cell-lamp\"></span>CHROME</span><span class=\"ds-cell-title\">Bug report: crop handle drifts on second monitor</span></button><button class=\"ds-cell\" aria-selected=\"true\"><span class=\"ds-cell-exe\"><span class=\"ds-cell-lamp\"></span>CODE <em>minimized</em></span><span class=\"ds-cell-title\">App.tsx - qclipz-desktop</span></button></div>",
+      "css": ".ds-cell { display:flex; flex-direction:column; align-items:flex-start; gap:4px; width:220px; height:80px; padding:10px 12px; text-align:left; border-radius:8px; border:1px solid var(--n3, #262122); background:var(--n1, #151213); color:var(--n9, #f6f0ee); overflow:hidden; cursor:pointer; transition:border-color 90ms steps(2,end), background 90ms steps(2,end); } .ds-cell:hover { border-color:var(--n5, #4a4142); background:var(--n2, #1c1819); } .ds-cell:focus-visible { outline:2px solid var(--tally-green, #2bd46a); outline-offset:2px; } .ds-cell[aria-selected=true] { border-color:var(--tally-green, #2bd46a); background:var(--tally-green-wash, rgba(43,212,106,.12)); } .ds-cell-exe { display:flex; align-items:center; gap:7px; font:700 14px var(--font-sign, 'Barlow Condensed', 'Barlow', sans-serif); letter-spacing:.04em; color:var(--n8, #d9d0d0); } .ds-cell-exe em { font:500 11px var(--font-ui, 'Barlow', sans-serif); font-style:normal; letter-spacing:0; color:var(--amber, #ffb020); } .ds-cell-lamp { width:8px; height:8px; border-radius:50%; background:var(--n5, #4a4142); } .ds-cell[aria-selected=true] .ds-cell-lamp { background:var(--tally-green, #2bd46a); box-shadow:0 0 8px var(--tally-green, #2bd46a); } .ds-cell-title { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font:400 13px/1.3 var(--font-ui, 'Barlow', sans-serif); color:var(--n8, #d9d0d0); }"
+    },
+    {
+      "name": "Tally Frame",
+      "kind": "custom",
+      "refersTo": "frame-tag",
+      "description": "Capture outline with corner brackets and a pixel-size tag; green while armed.",
+      "html": "<div style=\"padding:44px 32px 32px;background:#0e0c0d\"><div class=\"ds-frame\"><i class=\"ds-c ds-tl\"></i><i class=\"ds-c ds-tr\"></i><i class=\"ds-c ds-bl\"></i><i class=\"ds-c ds-br\"></i><span class=\"ds-frame-tag\">1080 × 1080</span></div></div>",
+      "css": ".ds-frame { position:relative; width:180px; height:120px; outline:2px solid var(--tally-green, #2bd46a); } .ds-c { position:absolute; width:14px; height:14px; border:0 solid var(--tally-green, #2bd46a); } .ds-tl { left:-5px; top:-5px; border-left-width:3px; border-top-width:3px; } .ds-tr { right:-5px; top:-5px; border-right-width:3px; border-top-width:3px; } .ds-bl { left:-5px; bottom:-5px; border-left-width:3px; border-bottom-width:3px; } .ds-br { right:-5px; bottom:-5px; border-right-width:3px; border-bottom-width:3px; } .ds-frame-tag { position:absolute; top:-28px; left:-2px; padding:1px 7px; border-radius:4px; background:var(--tally-green, #2bd46a); color:var(--tally-green-ink, #062611); font:700 14px var(--font-sign, 'Barlow Condensed', 'Barlow', sans-serif); letter-spacing:.02em; font-variant-numeric:tabular-nums; white-space:nowrap; }"
+    },
+    {
+      "name": "ON AIR Lightbox",
+      "kind": "button",
+      "refersTo": "onair",
+      "description": "Primary record control: unlit red glass at rest, a flat lit sign with white lettering while recording.",
+      "html": "<div style=\"display:flex;flex-direction:column;gap:10px;width:276px;padding:12px 18px 18px;background:#1c1819\"><button class=\"ds-onair\"><span class=\"ds-onair-letters\">ON AIR</span><span class=\"ds-onair-sub\">Record <kbd>Ctrl R</kbd></span></button><button class=\"ds-onair ds-lit\"><span class=\"ds-onair-letters\">00:42</span><span class=\"ds-onair-sub\">Stop <kbd>Ctrl R</kbd></span></button></div>",
+      "css": ".ds-onair { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; height:92px; border-radius:10px; border:1px solid var(--glass-off-rim, #4a1a1f); background:radial-gradient(120% 90% at 50% 40%, #3a1317 0%, var(--glass-off, #2a0e11) 70%); color:var(--letters-off, #c4434d); cursor:pointer; transition:color 90ms steps(2,end), border-color 90ms steps(2,end); } .ds-onair:hover { color:#e0545f; border-color:#7a2a32; } .ds-onair:active { transform:translateY(1px); } .ds-onair:focus-visible { outline:2px solid var(--tally-green, #2bd46a); outline-offset:2px; } .ds-onair-letters { font:700 40px/1 var(--font-sign, 'Barlow Condensed', 'Barlow', sans-serif); letter-spacing:.14em; padding-left:.14em; font-variant-numeric:tabular-nums; } .ds-onair-sub { display:inline-flex; align-items:center; gap:6px; font:600 12px var(--font-ui, 'Barlow', sans-serif); letter-spacing:.02em; color:#e8838b; } .ds-onair kbd { font:600 11px var(--font-ui, 'Barlow', sans-serif); padding:1px 5px; border-radius:4px; border:1px solid currentColor; } .ds-lit { color:#fff6f4; border-color:var(--tally-red, #ff2d3d); background:var(--lit, #c91726); box-shadow:0 8px 34px rgba(255,45,61,.45), 0 0 0 1px rgba(255,45,61,.35); } .ds-lit:hover { color:#fff; border-color:#ff8a93; } .ds-lit .ds-onair-letters { letter-spacing:.06em; padding-left:.06em; text-shadow:0 0 16px rgba(255,120,130,.9); } .ds-lit .ds-onair-sub { color:#fff; }"
+    },
+    {
+      "name": "Recording Bar",
+      "kind": "custom",
+      "refersTo": "recbar",
+      "description": "Floating bar while recording: small lit ON AIR sign with timecode, size, restore and Stop.",
+      "html": "<div class=\"ds-recbar\"><span class=\"ds-recbar-sign\"><span class=\"ds-recbar-onair\">ON AIR</span><span class=\"ds-recbar-time\">01:07</span></span><span class=\"ds-recbar-size\">1080×1920</span><button class=\"ds-recbar-stop\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\"><rect x=\"5\" y=\"5\" width=\"10\" height=\"10\" rx=\"1.5\" fill=\"currentColor\"/></svg>Stop</button></div>",
+      "css": ".ds-recbar { display:flex; align-items:center; gap:10px; width:340px; height:48px; padding:0 6px 0 8px; border-radius:12px; background:var(--n1, #151213); border:1px solid var(--n4, #332c2d); font:400 14px var(--font-ui, 'Barlow', sans-serif); } .ds-recbar-sign { display:inline-flex; align-items:baseline; gap:9px; height:38px; line-height:38px; padding:0 12px; border-radius:8px; border:1px solid #ff6b76; background:var(--lit, #c91726); box-shadow:0 0 14px rgba(255,45,61,.55); color:#fff; } .ds-recbar-onair { font:700 13px var(--font-sign, 'Barlow Condensed', 'Barlow', sans-serif); letter-spacing:.14em; } .ds-recbar-time { font:700 22px var(--font-sign, 'Barlow Condensed', 'Barlow', sans-serif); letter-spacing:.03em; font-variant-numeric:tabular-nums; } .ds-recbar-size { margin-right:auto; font-size:12px; color:var(--n7, #a69b9c); font-variant-numeric:tabular-nums; } .ds-recbar-stop { display:inline-flex; align-items:center; gap:7px; height:34px; padding:0 14px; border-radius:8px; border:1px solid var(--n5, #4a4142); background:var(--n3, #262122); color:var(--n9, #f6f0ee); font:600 14px var(--font-ui, 'Barlow', sans-serif); cursor:pointer; } .ds-recbar-stop svg { color:var(--tally-red, #ff2d3d); } .ds-recbar-stop:hover { background:var(--n4, #332c2d); border-color:var(--n6, #6f6566); } .ds-recbar-stop:focus-visible { outline:2px solid var(--tally-green, #2bd46a); outline-offset:2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Studio Tally Light",
+    "overview": "QClipz is styled after the tally system on a studio camera. The ground is studio black, tinted warm like a camera body, and built from one graphite ramp. Two lamps carry meaning. Tally green means armed: the area that will be recorded, the selected option, a toggle that is on. Tally red means live: recording is running, or the control in front of you will start or stop it. The primary action is an actual ON AIR lightbox. When idle it is unlit red glass, and when recording starts it strikes on as a flat deep-red sign with white lettering. The system rejects the usual recorder look of grey panels with one small red dot.\n\nDensity is that of a working tool. Controls are 34px tall, gaps are tight (6–14px), and the main window has a work area beside a 312px settings rail. Nothing glides. A state change is a relay closing, a hard two-step switch at 90ms, and the only animation is the lamp warm-up flicker when a sign lights. Lettering comes in two voices: Barlow for UI text, and Barlow Condensed for anything that reads like a sign (the brand, section heads, size tags, ON AIR, the timecode). Both are self-hosted through @fontsource.\n\nThe monitor map tells the truth. Screens are drawn at their exact relative scale over a real desktop snapshot. The capture area is framed in a tally-colored outline with corner brackets and a pixel-size tag, so what you see selected is what gets recorded.",
+    "keyCharacteristics": [
+      "Warm graphite ground from a single 10-step ramp (n0–n9); depth comes from tonal steps, not shadows.",
+      "Green marks state and never fills an action. Red marks live and record.",
+      "The ON AIR lightbox is the primary control: unlit glass when idle, a lit sign while recording.",
+      "Condensed sign lettering for labels that act as signs. Tabular figures for every number that changes.",
+      "Hard relay switches (90ms, steps(2, end)). The only motion is the lamp warm-up, and it respects reduced motion.",
+      "1px rules, gently rounded controls (6–10px), corner-bracket frames."
+    ],
+    "rules": [
+      { "name": "The Tally Rule", "body": "Green reports state and red reports live. Green never fills a button or other action. If it is green, it is already true.", "section": "colors" },
+      { "name": "The Red Is Reserved Rule", "body": "Tally red appears only for record, live, stop, and destructive hover. If a red element cannot be acted on and does not mean \"recording now\", it is wrong.", "section": "colors" },
+      { "name": "The Lit Field Rule", "body": "White lettering on red always sits on the lit field (#c91726), never on bright tally red. Bright red is for lamps, outlines and glows.", "section": "colors" },
+      { "name": "The One Ramp Rule", "body": "Every neutral comes from n0–n9. Do not introduce in-between greys.", "section": "colors" },
+      { "name": "The Sign Lettering Rule", "body": "Condensed lettering is only for things that read as signs: the brand, section heads, tags, ON AIR, and timecode. Running UI text, buttons and fields stay in Barlow.", "section": "typography" },
+      { "name": "The Tabular Rule", "body": "Any number that changes or gets compared (timecode, W × H, X/Y/W/H fields, summary line) uses tabular figures.", "section": "typography" },
+      { "name": "The True Scale Rule", "body": "Monitors are drawn at their exact relative size and position over a real snapshot. The map is a measurement, not an illustration.", "section": "layout" },
+      { "name": "The Glow Is A Lamp Rule", "body": "A glow means a light is on. Panels inside the window never glow and never cast shadows.", "section": "elevation" },
+      { "name": "The Relay Rule", "body": "State changes are hard switches: `90ms steps(2, end)` on background, border, color and transform. Never use eased fades or slides. The one exception is the lamp warm-up, a 380ms stepped flicker of brightness when a sign lights. Under prefers-reduced-motion it is removed.", "section": "components" }
+    ],
+    "dos": [
+      "Do use tally green (#2bd46a) only to report state: frame, lamp, toggle-on, selected cell, focus ring.",
+      "Do put white lettering on the lit field (#c91726) whenever red carries text.",
+      "Do switch states with `90ms steps(2, end)`. Reserve the 380ms lamp warm-up for a sign lighting, and drop it under reduced motion.",
+      "Do set sign-like labels (brand, section heads, tags, ON AIR, timecode) in Barlow Condensed 600–700, and everything else in Barlow.",
+      "Do use tabular figures for every timecode, size and coordinate.",
+      "Do frame capture and crop areas with the 2px tally outline, 3px corner brackets and a pixel-size tag.",
+      "Do build depth from the n0–n9 ramp with 1px rules. Only panels floating over the desktop get the drop shadow."
+    ],
+    "donts": [
+      "Don't fill a button or action with tally green.",
+      "Don't use tally red for anything that is neither live, record, stop nor a destructive hover.",
+      "Don't set white text directly on bright tally red (#ff2d3d). It reads at about 3.7:1.",
+      "Don't add eased fades, slides or other animation beyond the lamp warm-up.",
+      "Don't introduce greys outside the n0–n9 ramp or a second accent hue.",
+      "Don't fall back to the category default of grey panels with a lone red dot. Record is the ON AIR sign."
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+html.helper,
+html.helper body,
+html.helper #root {
+  background: transparent !important;
+}
+
+.recbar {
+  position: fixed;
+  inset: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 4px;
+  border-radius: 12px;
+  background: var(--n1);
+  border: 1px solid var(--n4);
+  user-select: none;
+  cursor: grab;
+}
+.recbar-grip { display: grid; place-items: center; width: 22px; color: var(--n6); }
+/* A small lit ON AIR sign carries the timecode. */
+.recbar-sign {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #ff6b76;
+  background: var(--lit);
+  box-shadow: 0 0 14px rgba(255, 45, 61, 0.55);
+  color: #fff;
+  line-height: 38px;
+  animation: lamp-warmup 380ms steps(1, end) both;
+}
+.recbar-onair {
+  font-family: var(--font-sign);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+.recbar-time {
+  font-family: var(--font-sign);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.03em;
+}
+.recbar-size { font-size: 12px; color: var(--n7); margin-right: auto; }
+.recbar-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--n4);
+  background: var(--n2);
+  color: var(--n8);
+}
+.recbar-btn:hover { background: var(--n3); }
+.recbar-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--n5);
+  border-radius: 8px;
+  background: var(--n3);
+  color: var(--n9);
+  font-weight: 600;
+}
+.recbar-stop svg { color: var(--tally-red); }
+.recbar-stop:hover:not(:disabled) { background: var(--n4); border-color: var(--n6); }
+.recbar-stop:disabled { opacity: 0.7; }
+
+/* A tube lamp striking: two flickers, then on. Hard steps, no fades. */
+@keyframes lamp-warmup {
+  0% { filter: brightness(0.35); }
+  20% { filter: brightness(1); }
+  32% { filter: brightness(0.5); }
+  48% { filter: brightness(1.05); }
+  60% { filter: brightness(0.8); }
+  100% { filter: brightness(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recbar-sign { animation: none; }
+}
+
+.rec-border {
+  position: fixed;
+  inset: 0;
+  border: 3px solid var(--tally-red);
+  pointer-events: none;
+}

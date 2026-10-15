@@ -1,0 +1,123 @@
+html.helper body { overflow: hidden; }
+
+.sel-root {
+  position: fixed;
+  inset: 0;
+  cursor: crosshair;
+  outline: none;
+  user-select: none;
+  background: rgba(8, 6, 7, 0.55);
+}
+/* The box's shadow does the dimming, leaving the framed area clear. */
+.sel-root.has-box { background: rgba(0, 0, 0, 0.004); }
+
+.sel-toolbar {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--n1);
+  border: 1px solid var(--n4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  cursor: default;
+  z-index: 3;
+  white-space: nowrap;
+}
+.sel-toolbar .field { width: 190px; }
+.sel-sep { width: 1px; height: 22px; background: var(--n4); }
+
+.sel-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sign);
+  font-weight: 600;
+  font-size: 30px;
+  letter-spacing: 0.01em;
+  color: var(--n9);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.sel-hint span { font-family: var(--font-ui); font-weight: 500; font-size: 13px; color: var(--n8); }
+
+.sel-box {
+  position: absolute;
+  cursor: move;
+  outline: 1px solid var(--tally-green);
+  /* tiny alpha keeps the clear area clickable */
+  background: rgba(255, 255, 255, 0.004);
+  box-shadow: 0 0 0 100vmax rgba(8, 6, 7, 0.55);
+}
+.dragging .sel-box { cursor: crosshair; }
+
+/* Tally-green corner brackets, the frame you are arming. */
+.corner { position: absolute; width: 18px; height: 18px; border: 0 solid var(--tally-green); pointer-events: none; }
+.corner.tl { left: -3px; top: -3px; border-left-width: 3px; border-top-width: 3px; }
+.corner.tr { right: -3px; top: -3px; border-right-width: 3px; border-top-width: 3px; }
+.corner.bl { left: -3px; bottom: -3px; border-left-width: 3px; border-bottom-width: 3px; }
+.corner.br { right: -3px; bottom: -3px; border-right-width: 3px; border-bottom-width: 3px; }
+
+.sel-size {
+  position: absolute;
+  bottom: 100%;
+  left: -3px;
+  margin-bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--tally-green);
+  color: var(--tally-green-ink);
+  font-family: var(--font-sign);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.sel-size.in { bottom: auto; top: 8px; left: 8px; margin: 0; }
+
+.sel-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  background: var(--n9);
+  border: 2px solid var(--tally-green);
+  border-radius: 3px;
+}
+.h-nw { left: 0; top: 0; cursor: nwse-resize; }
+.h-n { left: 50%; top: 0; cursor: ns-resize; }
+.h-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.h-e { left: 100%; top: 50%; cursor: ew-resize; }
+.h-se { left: 100%; top: 100%; cursor: nwse-resize; }
+.h-s { left: 50%; top: 100%; cursor: ns-resize; }
+.h-sw { left: 0; top: 100%; cursor: nesw-resize; }
+.h-w { left: 0; top: 50%; cursor: ew-resize; }
+
+.sel-actions {
+  position: absolute;
+  right: -3px;
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--n1);
+  border: 1px solid var(--n4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  cursor: default;
+  white-space: nowrap;
+}
+.sel-actions.below { top: 100%; margin-top: 12px; }
+.sel-actions.above { bottom: 100%; margin-bottom: 12px; }
+.sel-actions.inside { bottom: 12px; right: 12px; }

@@ -1,0 +1,192 @@
+@import "@fontsource/barlow/latin-400.css";
+@import "@fontsource/barlow/latin-500.css";
+@import "@fontsource/barlow/latin-600.css";
+@import "@fontsource/barlow-condensed/latin-600.css";
+@import "@fontsource/barlow-condensed/latin-700.css";
+
+:root {
+  /* Studio graphite: one 10-step neutral ramp, warm like a camera body. */
+  --n0: #0e0c0d;
+  --n1: #151213;
+  --n2: #1c1819;
+  --n3: #262122;
+  --n4: #332c2d;
+  --n5: #4a4142;
+  --n6: #6f6566;
+  --n7: #a69b9c;
+  --n8: #d9d0d0;
+  --n9: #f6f0ee;
+
+  /* Tally: green = armed / selected, red = live / record, amber = attention. */
+  --tally-green: #2bd46a;
+  --tally-green-wash: rgba(43, 212, 106, 0.12);
+  --tally-green-ink: #062611;
+  --tally-red: #ff2d3d;
+  --lit: #c91726; /* lit sign field: white text 5.8:1 */
+  --tally-red-wash: rgba(255, 45, 61, 0.14);
+  --glass-off: #2a0e11;
+  --glass-off-rim: #4a1a1f;
+  --letters-off: #c4434d;
+  --amber: #ffb020;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --rule: 1px solid var(--n3);
+  --font-ui: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --font-sign: "Barlow Condensed", "Barlow", "Segoe UI", sans-serif;
+  --switch: 90ms steps(2, end);
+
+  color-scheme: dark;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--n9);
+  background: var(--n1);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+body { background: var(--n1); overflow: hidden; }
+
+::selection { background: var(--tally-green); color: var(--tally-green-ink); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--n4); border-radius: 10px; border: 2px solid var(--n1); }
+::-webkit-scrollbar-thumb:hover { background: var(--n5); }
+
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--tally-green); outline-offset: 2px; }
+
+button, input, select { font: inherit; color: inherit; }
+input { caret-color: var(--tally-green); }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Standard controls, Tally finish */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--n4);
+  background: var(--n2);
+  color: var(--n9);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--switch), border-color var(--switch);
+}
+.btn:hover:not(:disabled) { background: var(--n3); border-color: var(--n5); }
+.btn:disabled { color: var(--n6); }
+.btn svg { flex: none; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--n8); }
+.btn.ghost:hover:not(:disabled) { background: var(--n3); }
+.btn.live { background: var(--lit); border-color: var(--tally-red); color: #fff; font-weight: 600; }
+.btn.live:hover:not(:disabled) { background: #b3121f; }
+.btn.danger:hover:not(:disabled) { color: var(--tally-red); border-color: var(--tally-red); }
+.btn.icon { width: 34px; padding: 0; }
+
+.field {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--n4);
+  background: var(--n0);
+  color: var(--n9);
+  min-width: 0;
+}
+.field:hover { border-color: var(--n5); }
+.field:focus-visible { border-color: var(--tally-green); outline: none; }
+select.field { padding-right: 28px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5' fill='none' stroke='%23a69b9c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
+select.field option { background: var(--n2); }
+
+/* Segmented control */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 8px;
+  background: var(--n0);
+  border: 1px solid var(--n3);
+}
+.seg button {
+  height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--n7);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background var(--switch), color var(--switch);
+}
+.seg button:hover:not(:disabled) { color: var(--n9); }
+.seg button[aria-pressed="true"] { background: var(--n3); color: var(--n9); box-shadow: inset 0 0 0 1px var(--n4); }
+.seg button[aria-pressed="true"] .lamp { background: var(--tally-green); box-shadow: 0 0 6px var(--tally-green); }
+
+/* Toggle switch */
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  cursor: pointer;
+  color: var(--n8);
+}
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch .track {
+  flex: none;
+  width: 34px;
+  height: 20px;
+  border-radius: 20px;
+  background: var(--n4);
+  position: relative;
+  transition: background var(--switch);
+}
+.switch .track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--n8);
+  transition: transform var(--switch), background var(--switch);
+}
+.switch input:checked + .track { background: var(--tally-green); }
+.switch input:checked + .track::after { transform: translateX(14px); background: var(--tally-green-ink); }
+.switch input:focus-visible + .track { outline: 2px solid var(--tally-green); outline-offset: 2px; }
+
+/* A tally lamp: small round light that is either armed, live, or off. */
+.lamp {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--n5);
+}
+.lamp.armed { background: var(--tally-green); box-shadow: 0 0 8px var(--tally-green); }
+.lamp.live { background: var(--tally-red); box-shadow: 0 0 10px var(--tally-red); }
+
+kbd {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  opacity: 0.7;
+}
