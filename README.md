@@ -9,7 +9,7 @@ A fast, no-fuss screen recorder for Windows. Pick a screen, drag an area, or cho
 - **Full screen**: any monitor, or all of them, picked on a live map of your screens.
 - **Area**: drag a rectangle on any monitor, then move or resize it. Lock the aspect (16:9, 9:16 for Shorts/Reels, 1:1, 4:3) or snap to an exact size (1080p, 720p, 1080×1920…). Press **R** to start recording right from the overlay.
 - **Window**: pick any open window. It's brought to the front and recorded where it sits.
-- **System sound**: records whatever plays on your speakers or headphones. No Stereo Mix or virtual cable needed. Mix in a **microphone** for voice-overs.
+- **System sound**: records whatever plays on your speakers or headphones. No Stereo Mix or virtual cable needed. Mix in a **microphone** for voice-overs. **Boost quiet audio** brings low-volume recordings up to a normal level.
 - **Output**: original size or 2160p–480p, 24/30/60 fps, cursor on or off.
 - **Stays out of the shot**: the QClipz window, the floating stop bar and the red border never appear in your recordings.
 - **After recording**: preview, crop into a new file, open, show in folder, or send to the Recycle Bin.
@@ -73,9 +73,10 @@ The output is `src-tauri/target/release/bundle/nsis/QClipz_<version>_x64-setup.e
 ### How capture works
 
 - Video comes from FFmpeg `ddagrab` (Desktop Duplication), or `gdigrab` for areas spanning monitors, encoded with libx264.
-- System sound is WASAPI loopback (via `cpal`), streamed to FFmpeg over a local socket. Each packet is placed by its capture timestamp.
-- The microphone is a DirectShow input.
-- Every stream is put on one wall clock inside FFmpeg's filter graph, so audio and video stay in sync.
+- FFmpeg records video only, stamping frames with wall-clock time, at below-normal priority.
+- System sound (WASAPI loopback) and the microphone (WASAPI input) are captured in-process via `cpal` and written to temporary files. Each packet is placed by its capture timestamp on the same clock.
+- When you stop, the tracks are trimmed to the first video frame, mixed, optionally loudness-boosted, and muxed with the video (copied, not re-encoded).
+- Keeping live audio out of the FFmpeg process matters: FFmpeg paces a screen grab to its live audio inputs, which drops capture to a few fps on slower PCs.
 - The ffmpeg log of the last recording is at `%TEMP%\qclipz-ffmpeg.log`.
 
 ## License

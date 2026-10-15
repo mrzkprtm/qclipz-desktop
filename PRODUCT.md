@@ -29,7 +29,7 @@ Area-first recording: drag a rectangle on any monitor (with aspect lock and size
 ## Capabilities and Constraints
 
 - Sources: full screen (one monitor or all), dragged area, single window.
-- Output: original size or scaled by shorter side (2160/1440/1080/720/480), 24/30/60 fps, cursor on/off. Audio: system sound (WASAPI loopback, no Stereo Mix) and/or a DirectShow microphone, mixed and kept on one clock with the video.
+- Output: original size or scaled by shorter side (2160/1440/1080/720/480), 24/30/60 fps, cursor on/off. Audio: system sound (WASAPI loopback, no Stereo Mix) and/or a WASAPI microphone, captured in-process on one clock with the video, muxed on stop, with optional loudness boost.
 - Capture uses ffmpeg (Desktop Duplication `ddagrab`; GDI fallback for areas that span monitors). ffmpeg ships inside the installer.
 - Windows 10 2004+ (exclude-from-capture). No pause/resume yet, no global hotkey yet.
 - License: MIT for QClipz; the installer bundles FFmpeg (GPLv3) and Barlow fonts (OFL).

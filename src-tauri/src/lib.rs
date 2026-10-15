@@ -1,17 +1,26 @@
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use tauri::{Emitter, Manager};
 
-mod loopback;
+mod audio;
 mod win;
+
+// A recording in progress: ffmpeg writes video only; audio tracks are captured in-process.
+struct Session {
+    child: Child,
+    out: PathBuf,
+    video: PathBuf,
+    tracks: Vec<audio::Track>,
+    boost: bool,
+}
 
 #[derive(Default)]
 struct Recorder {
-    active: Mutex<Option<(Child, PathBuf, Option<loopback::Loopback>)>>,
+    active: Mutex<Option<Session>>,
     // Last finished recording; the only file `discard_recording` may delete.
     last: Mutex<Option<PathBuf>>,
 }
@@ -48,6 +57,17 @@ fn spawn_err(e: std::io::Error) -> String {
     }
 }
 
+// Run ffmpeg to completion; Ok(stderr) on success, Err with its last lines otherwise.
+fn run_ffmpeg(args: &[String], what: &str) -> Result<String, String> {
+    let out = ffmpeg().args(args).stdin(Stdio::null()).output().map_err(spawn_err)?;
+    let err = String::from_utf8_lossy(&out.stderr).into_owned();
+    if !out.status.success() {
+        let tail: Vec<&str> = err.lines().filter(|l| !l.trim().is_empty()).rev().take(4).collect();
+        return Err(format!("{what} failed:\n{}", tail.into_iter().rev().collect::<Vec<_>>().join("\n")));
+    }
+    Ok(err)
+}
+
 async fn sleep(d: Duration) {
     let _ = tauri::async_runtime::spawn_blocking(move || std::thread::sleep(d)).await;
 }
@@ -77,10 +97,13 @@ struct RecordParams {
     area: Rect,
     // Record this window's on-screen rectangle instead of `area` ("0x1a2b").
     window_hwnd: Option<String>,
-    // Microphone / DirectShow device.
+    // Microphone (WASAPI input device name).
     audio_device: Option<String>,
     // Whatever plays on the default speakers or headphones (WASAPI loopback).
     system_audio: bool,
+    // Raise quiet audio towards a normal loudness when saving.
+    #[serde(default)]
+    boost_audio: bool,
     // Scale so the shorter side is this many px (1080 => 1920x1080 or 1080x1920).
     output_short_side: Option<u32>,
     draw_mouse: bool,
@@ -112,21 +135,20 @@ fn pick_backend(area: &Rect, outputs: &[win::Rect]) -> Backend {
     }
 }
 
-fn record_args(b: Backend, p: &RecordParams, area: &Rect, system: Option<&loopback::Source>) -> Vec<String> {
-    // One clock for every stream: inputs keep their own timestamps (-copyts) and the graph
-    // below moves video and audio onto wall-clock time since the graph started (RTCSTART).
-    // Without this, audio counts from when ffmpeg opened it and video from its first frame,
-    // so audio ends up late by ffmpeg's startup time.
-    let mut a: Vec<String> = vec!["-y".into(), "-copyts".into()];
-    let mut inputs = 0;
-    let wallclock_video = "setpts=(RTCTIME-RTCSTART)/(TB*1000000)";
+// Video-only capture. Frames are stamped with wall-clock time since `epoch_us`, the same
+// moment the audio tracks count from, so the mux at stop can line them up exactly.
+// (Audio stays out of this process: live audio inputs make ffmpeg pace the screen grab
+// to them, which dropped capture to ~5 fps on slower PCs.)
+fn record_args(b: Backend, p: &RecordParams, area: &Rect, video: &Path, epoch_us: i64) -> Vec<String> {
+    let mut a: Vec<String> = vec!["-y".into()];
+    let clock = format!("setpts=(RTCTIME-{epoch_us})/(TB*1000000)");
     let size = format!("{}x{}", area.width, area.height);
     let mouse = if p.draw_mouse { "1" } else { "0" };
     let vf = video_filter(p.output_short_side);
 
-    let video = match b {
+    let graph = match b {
         Backend::Dda { output, ox, oy } => format!(
-            "ddagrab=output_idx={output}:framerate={fps}:draw_mouse={mouse}:offset_x={ox}:offset_y={oy}:video_size={size},{wallclock_video},hwdownload,format=bgra,{vf}[v]",
+            "ddagrab=output_idx={output}:framerate={fps}:draw_mouse={mouse}:offset_x={ox}:offset_y={oy}:video_size={size},{clock},hwdownload,format=bgra,{vf}[v]",
             fps = p.fps
         ),
         Backend::Gdi => {
@@ -135,68 +157,16 @@ fn record_args(b: Backend, p: &RecordParams, area: &Rect, system: Option<&loopba
             a.extend(["-draw_mouse".into(), mouse.into()]);
             a.extend(["-offset_x".into(), area.x.to_string(), "-offset_y".into(), area.y.to_string()]);
             a.extend(["-video_size".into(), size, "-i".into(), "desktop".into()]);
-            inputs += 1;
-            format!("[0:v]{wallclock_video},{vf}[v]")
+            format!("[0:v]{clock},{vf}[v]")
         }
-    };
-
-    // System sound: sample 0 is the feeder's start moment, known on the wall clock.
-    let sys = system.map(|src| {
-        a.extend(src.ffmpeg_input());
-        inputs += 1;
-        format!(
-            "[{i}:a]asetpts=PTS-(RTCSTART-{epoch})/(TB*1000000),atrim=start=0",
-            i = inputs - 1,
-            epoch = src.epoch_us()
-        )
-    });
-    // Microphone: stamped with the wall clock on arrival, with a small buffer to keep that close to capture.
-    let mic = p.audio_device.as_deref().filter(|d| !d.is_empty()).map(|dev| {
-        a.extend(["-thread_queue_size", "1024", "-use_wallclock_as_timestamps", "1", "-audio_buffer_size", "50", "-f", "dshow", "-i"].map(String::from));
-        a.push(format!("audio={dev}"));
-        inputs += 1;
-        format!(
-            "[{i}:a]asetpts=PTS-RTCSTART/(TB*1000000),atrim=start=0,aresample=async=1000:first_pts=0",
-            i = inputs - 1
-        )
-    });
-    let audio = match (sys, mic) {
-        (Some(s), Some(m)) => Some(format!("{s}[sys];{m}[mic];[sys][mic]amix=inputs=2:duration=longest:normalize=0[a]")),
-        (Some(c), None) | (None, Some(c)) => Some(format!("{c}[a]")),
-        (None, None) => None,
-    };
-
-    let graph = match &audio {
-        Some(au) => format!("{video};{au}"),
-        None => video,
     };
     a.extend(["-filter_complex".into(), graph, "-map".into(), "[v]".into()]);
     a.extend(["-c:v", "libx264", "-preset", "ultrafast", "-crf", "23"].map(String::from));
-    if audio.is_some() {
-        a.extend(["-map", "[a]", "-c:a", "aac", "-b:a", "160k", "-ac", "2"].map(String::from));
-    }
-    a.push(p.output_path.clone());
+    a.push(video.to_string_lossy().into_owned());
     a
 }
 
-// One recording attempt with a given backend, including its system-sound feed.
-async fn attempt(b: Backend, p: &RecordParams, area: &Rect) -> Result<(Child, Option<loopback::Loopback>), String> {
-    let source = if p.system_audio { Some(loopback::Source::open()?) } else { None };
-    let args = record_args(b, p, area, source.as_ref());
-    // Start feeding before ffmpeg opens the socket, so it never waits on us.
-    let feed = source.map(loopback::Source::start);
-    match spawn_recorder(&args).await {
-        Ok(child) => Ok((child, feed)),
-        Err(e) => {
-            if let Some(f) = feed {
-                f.stop();
-            }
-            Err(e)
-        }
-    }
-}
-
-// Start ffmpeg; Err if it dies during startup (bad device, capture API failure...).
+// Start ffmpeg; Err if it dies during startup (capture API failure...).
 async fn spawn_recorder(args: &[String]) -> Result<Child, String> {
     let log_file = std::fs::File::create(log_path()).map_err(|e| format!("open log: {}", e))?;
     let log_file_err = log_file.try_clone().map_err(|e| format!("clone log: {}", e))?;
@@ -207,11 +177,158 @@ async fn spawn_recorder(args: &[String]) -> Result<Child, String> {
         .stderr(Stdio::from(log_file_err))
         .spawn()
         .map_err(spawn_err)?;
+    // Keep the user's apps (the thing being recorded) responsive on slow PCs.
+    win::lower_priority(&child);
     sleep(Duration::from_millis(900)).await;
     if let Ok(Some(_)) = child.try_wait() {
         return Err(format!("ffmpeg failed to start:\n{}", log_tail()));
     }
     Ok(child)
+}
+
+// Temporary files next to the final recording, removed after the mux.
+fn part(out: &Path, suffix: &str) -> PathBuf {
+    let mut name = out.file_stem().unwrap_or_default().to_os_string();
+    name.push(format!(".{suffix}"));
+    out.with_file_name(name)
+}
+
+fn now_us() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_micros() as i64)
+        .unwrap_or(0)
+}
+
+fn discard_tracks(tracks: Vec<audio::Track>) {
+    let paths: Vec<PathBuf> = tracks.iter().map(|t| t.path().clone()).collect();
+    drop(tracks); // stops capture
+    for f in paths {
+        let _ = std::fs::remove_file(f);
+    }
+}
+
+// Start audio tracks and the video ffmpeg for `area`. Returns the session and the backend used.
+async fn begin(p: &RecordParams, area: &Rect, backend: Backend) -> Result<(Session, Backend), String> {
+    let out = PathBuf::from(&p.output_path);
+    if let Some(dir) = out.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("create {}: {}", dir.display(), e))?;
+    }
+    // Shared timeline: audio byte 0 and video pts 0 are this moment.
+    let start = Instant::now();
+    let epoch_us = now_us();
+    let mut tracks = Vec::new();
+    if p.system_audio {
+        tracks.push(audio::Track::start(&audio::Source::System, part(&out, "system.raw"), start)?);
+    }
+    if let Some(mic) = p.audio_device.as_deref().filter(|d| !d.is_empty()) {
+        match audio::Track::start(&audio::Source::Mic(mic.into()), part(&out, "mic.raw"), start) {
+            Ok(t) => tracks.push(t),
+            Err(e) => {
+                discard_tracks(tracks);
+                return Err(e);
+            }
+        }
+    }
+
+    let video = part(&out, "part.mp4");
+    let spawned = match spawn_recorder(&record_args(backend, p, area, &video, epoch_us)).await {
+        Ok(c) => Ok((c, backend)),
+        // Desktop Duplication can be unavailable (remote desktop, old drivers): fall back to GDI.
+        Err(_) if backend != Backend::Gdi => spawn_recorder(&record_args(Backend::Gdi, p, area, &video, epoch_us))
+            .await
+            .map(|c| (c, Backend::Gdi)),
+        Err(e) => Err(e),
+    };
+    match spawned {
+        Ok((child, used)) => Ok((Session { child, out, video, tracks, boost: p.boost_audio }, used)),
+        Err(e) => {
+            discard_tracks(tracks);
+            let _ = std::fs::remove_file(&video);
+            Err(e)
+        }
+    }
+}
+
+// "start: 0.633000" from ffmpeg's input summary: where the video begins on the shared timeline.
+fn video_start(video: &Path) -> f64 {
+    let info = ffmpeg().arg("-i").arg(video).stdin(Stdio::null()).output();
+    info.ok()
+        .map(|o| String::from_utf8_lossy(&o.stderr).into_owned())
+        .and_then(|s| s.split("start: ").nth(1)?.split(',').next()?.trim().parse().ok())
+        .unwrap_or(0.0)
+}
+
+// Stop capture, then write the final mp4: video copied as-is, audio trimmed to start
+// with the first video frame, mixed, optionally boosted, and encoded to AAC.
+fn end(mut s: Session) -> Result<PathBuf, String> {
+    let video_done = finish(s.child);
+    for t in &mut s.tracks {
+        t.stop()?;
+    }
+    video_done?;
+    if !s.video.exists() {
+        return Err(format!("recording file was not created:\n{}", log_tail()));
+    }
+
+    let mut args: Vec<String> = vec!["-y".into(), "-i".into(), s.video.to_string_lossy().into_owned()];
+    if !s.tracks.is_empty() {
+        let offset = video_start(&s.video);
+        let mut audio_inputs = Vec::new();
+        let mut chains = Vec::new();
+        for (i, t) in s.tracks.iter().enumerate() {
+            audio_inputs.extend(t.ffmpeg_input());
+            chains.push(format!("[{i}:a]atrim=start={offset:.6},asetpts=PTS-STARTPTS[a{i}]"));
+        }
+        let mix = if s.tracks.len() == 1 {
+            "[a0]anull".to_string()
+        } else {
+            "[a0][a1]amix=inputs=2:duration=longest:normalize=0".to_string()
+        };
+        // Audio-only graph, inputs numbered from 0.
+        let mut graph = format!("{};{mix}", chains.join(";"));
+        if s.boost {
+            graph += &boost_filter(&audio_inputs, &graph);
+        }
+        // In the mux the video is input 0, so shift the audio input numbers by one.
+        for i in (0..s.tracks.len()).rev() {
+            graph = graph.replace(&format!("[{i}:a]"), &format!("[{}:a]", i + 1));
+        }
+        args.extend(audio_inputs);
+        args.extend(["-filter_complex".into(), format!("{graph}[a]")]);
+        args.extend(["-map", "0:v", "-c:v", "copy", "-map", "[a]", "-c:a", "aac", "-b:a", "160k", "-ac", "2", "-shortest"].map(String::from));
+    } else {
+        args.extend(["-c", "copy"].map(String::from));
+    }
+    args.extend(["-movflags", "+faststart"].map(String::from));
+    args.push(s.out.to_string_lossy().into_owned());
+    run_ffmpeg(&args, "saving the recording")?;
+
+    let _ = std::fs::remove_file(&s.video);
+    for t in &s.tracks {
+        let _ = std::fs::remove_file(t.path());
+    }
+    Ok(s.out.clone())
+}
+
+// Measure the mix's loudness and return a gain stage that brings quiet audio up to about
+// -16 LUFS (a typical level for online video). Only ever boosts, capped at +24 dB, with a
+// limiter so peaks don't clip.
+fn boost_filter(audio_inputs: &[String], graph: &str) -> String {
+    let mut args: Vec<String> = vec!["-nostats".into()];
+    args.extend(audio_inputs.iter().cloned());
+    args.extend(["-filter_complex".into(), format!("{graph},ebur128=framelog=quiet"), "-f".into(), "null".into(), "-".into()]);
+    let lufs = run_ffmpeg(&args, "measuring loudness").ok().and_then(|err| {
+        let summary = err.rsplit("Summary:").next()?.to_string();
+        summary.split("I:").nth(1)?.split("LUFS").next()?.trim().parse::<f64>().ok()
+    });
+    match lufs {
+        Some(i) if i > -70.0 => {
+            let gain = (-16.0 - i).clamp(0.0, 24.0);
+            if gain < 0.5 { String::new() } else { format!(",volume={gain:.1}dB,alimiter=limit=0.95:level=0") }
+        }
+        _ => String::new(), // silence or unknown: leave as recorded
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -248,9 +365,6 @@ async fn start_record(
     if area.width < 16 || area.height < 16 {
         return Err("the area must be at least 16×16".into());
     }
-    if let Some(dir) = PathBuf::from(&params.output_path).parent() {
-        std::fs::create_dir_all(dir).map_err(|e| format!("create {}: {}", dir.display(), e))?;
-    }
 
     // Windows that span two screens get clipped to the screen holding most of them.
     let outputs = win::dxgi_outputs();
@@ -261,15 +375,8 @@ async fn start_record(
         area = clip(&area, o);
     }
 
-    let backend = pick_backend(&area, &outputs);
-    let ((child, feed), used) = match attempt(backend, &params, &area).await {
-        Ok(c) => (c, backend),
-        // Desktop Duplication can be unavailable (remote desktop, old drivers): fall back to GDI.
-        Err(_) if backend != Backend::Gdi => (attempt(Backend::Gdi, &params, &area).await?, Backend::Gdi),
-        Err(e) => return Err(e),
-    };
-
-    *state.active.lock().unwrap() = Some((child, PathBuf::from(&params.output_path), feed));
+    let (session, used) = begin(&params, &area, pick_backend(&area, &outputs)).await?;
+    *state.active.lock().unwrap() = Some(session);
     // The floating controls and border are hidden from capture, so they never show up in the video.
     let _ = open_recording_chrome(&app, &area, params.show_border);
     Ok(Started { area, backend: if used == Backend::Gdi { "gdi" } else { "dda" } })
@@ -385,20 +492,10 @@ fn finish(mut child: Child) -> Result<(), String> {
 #[tauri::command]
 async fn stop_record(app: tauri::AppHandle, state: tauri::State<'_, Recorder>) -> Result<String, String> {
     close_recording_chrome(&app);
-    let (child, out, feed) = state.active.lock().unwrap().take().ok_or("no recording in progress")?;
-    tauri::async_runtime::spawn_blocking(move || {
-        let r = finish(child);
-        if let Some(f) = feed {
-            f.stop();
-        }
-        r
-    })
-    .await
-    .map_err(|e| e.to_string())??;
-
-    if !out.exists() {
-        return Err(format!("recording file was not created:\n{}", log_tail()));
-    }
+    let session = state.active.lock().unwrap().take().ok_or("no recording in progress")?;
+    let out = tauri::async_runtime::spawn_blocking(move || end(session))
+        .await
+        .map_err(|e| e.to_string())??;
     // Let the webview load this one file through the asset protocol for preview.
     app.asset_protocol_scope().allow_file(&out).map_err(|e| e.to_string())?;
     *state.last.lock().unwrap() = Some(out.clone());
@@ -464,33 +561,10 @@ async fn crop_and_save(app: tauri::AppHandle, params: CropParams) -> Result<(), 
     Ok(())
 }
 
-// Names of DirectShow audio capture devices (mics, "Stereo Mix", etc.).
+// Microphones and other capture devices (WASAPI), default first.
 #[tauri::command]
-async fn list_audio_devices() -> Result<Vec<String>, String> {
-    let output = tauri::async_runtime::spawn_blocking(|| {
-        ffmpeg()
-            .args(["-list_devices", "true", "-f", "dshow", "-i", "dummy"])
-            .stdin(Stdio::null())
-            .output()
-    })
-    .await
-    .map_err(|e| e.to_string())?
-    .map_err(spawn_err)?;
-    Ok(parse_dshow_audio(&String::from_utf8_lossy(&output.stderr)))
-}
-
-fn parse_dshow_audio(text: &str) -> Vec<String> {
-    let mut seen = std::collections::HashSet::new();
-    text.lines()
-        .filter(|l| l.trim_end().ends_with("(audio)"))
-        .filter_map(|l| {
-            let start = l.find('"')? + 1;
-            let end = l.rfind('"')?;
-            (end > start).then(|| l[start..end].to_string())
-        })
-        // The same device can be listed twice.
-        .filter(|d| seen.insert(d.clone()))
-        .collect()
+fn list_audio_devices() -> Vec<String> {
+    audio::input_names()
 }
 
 #[derive(serde::Serialize)]
@@ -504,7 +578,7 @@ struct WindowInfo {
 
 #[tauri::command]
 fn system_audio_device() -> Option<String> {
-    loopback::output_name()
+    audio::output_name()
 }
 
 #[tauri::command]
@@ -699,12 +773,9 @@ pub fn run() {
         .run(|app, event| {
             // Don't leave ffmpeg running (and the mp4 unfinalized) when the app closes.
             if let tauri::RunEvent::Exit = event
-                && let Some((child, _, feed)) = app.state::<Recorder>().active.lock().unwrap().take()
+                && let Some(session) = app.state::<Recorder>().active.lock().unwrap().take()
             {
-                let _ = finish(child);
-                if let Some(f) = feed {
-                    f.stop();
-                }
+                let _ = end(session);
             }
         });
 }
@@ -712,21 +783,6 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_dshow_audio_devices() {
-        let text = r#"[in#0 @ 0000] "Integrated Camera" (video)
-[in#0 @ 0000]   Alternative name "@device_pnp_x"
-[in#0 @ 0000] "Microphone Array (Realtek(R) Audio)" (audio)
-[in#0 @ 0000]   Alternative name "@device_cm_y"
-[in#0 @ 0000] "Stereo Mix (Realtek(R) Audio)" (audio)
-[in#0 @ 0000] "Microphone Array (Realtek(R) Audio)" (audio)
-dummy: Immediate exit requested"#;
-        assert_eq!(
-            parse_dshow_audio(text),
-            vec!["Microphone Array (Realtek(R) Audio)", "Stereo Mix (Realtek(R) Audio)"]
-        );
-    }
 
     #[test]
     fn picks_dda_only_inside_one_monitor() {
@@ -755,34 +811,19 @@ mod probe {
 }
 
 #[cfg(test)]
-mod loopback_probe {
-    // cargo test loopback_to_file -- --ignored --nocapture   (play some sound meanwhile)
-    #[test]
-    #[ignore]
-    fn loopback_to_file() {
-        let out = std::env::temp_dir().join("qz-loopback-test.m4a");
-        let src = super::loopback::Source::open().unwrap();
-        let mut args = vec!["-y".to_string()];
-        args.extend(src.ffmpeg_input());
-        args.extend(["-t", "4", "-c:a", "aac"].map(String::from));
-        args.push(out.to_string_lossy().into_owned());
-        let feed = src.start();
-        let status = super::ffmpeg().args(&args).status().unwrap();
-        feed.stop();
-        assert!(status.success());
-        println!("wrote {}", out.display());
-    }
-}
-
-#[cfg(test)]
 mod sync_probe {
     use super::*;
-    // cargo test sync_probe -- --ignored --nocapture   (with the sync clip playing at 1920,159 640x360)
+    // Records through the app path (no UI) to measure A/V sync and fps:
+    //   QZ_AREA=x,y,w,h QZ_SECS=11 [QZ_MIC=name] [QZ_BOOST=1] cargo test sync_probe -- --ignored --nocapture
     #[test]
     #[ignore]
     fn sync_probe() {
         let out = std::env::temp_dir().join("qz-sync-rec.mp4");
-        let n: Vec<i32> = std::env::var("QZ_AREA").unwrap_or("1920,159,640,360".into()).split(',').map(|v| v.parse().unwrap()).collect();
+        let n: Vec<i32> = std::env::var("QZ_AREA")
+            .unwrap_or("1920,159,640,360".into())
+            .split(',')
+            .map(|v| v.parse().unwrap())
+            .collect();
         let area = Rect { x: n[0], y: n[1], width: n[2] as u32, height: n[3] as u32 };
         let p = RecordParams {
             output_path: out.to_string_lossy().into_owned(),
@@ -791,17 +832,15 @@ mod sync_probe {
             window_hwnd: None,
             audio_device: std::env::var("QZ_MIC").ok(),
             system_audio: true,
+            boost_audio: std::env::var("QZ_BOOST").is_ok(),
             output_short_side: None,
             draw_mouse: false,
             show_border: false,
         };
         let backend = pick_backend(&area, &win::dxgi_outputs());
-        let (child, feed) = tauri::async_runtime::block_on(attempt(backend, &p, &area)).unwrap();
+        let (session, used) = tauri::async_runtime::block_on(begin(&p, &area, backend)).unwrap();
         std::thread::sleep(Duration::from_secs(std::env::var("QZ_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(11)));
-        finish(child).unwrap();
-        if let Some(f) = feed {
-            f.stop();
-        }
-        println!("backend {backend:?} -> {}", out.display());
+        let path = end(session).unwrap();
+        println!("backend {used:?} -> {}", path.display());
     }
 }

@@ -103,6 +103,7 @@ export default function App() {
   const [hideWhileRecording, setHide] = usePersisted("hide", true);
   const [audioOn, setAudioOn] = usePersisted("audio", false); // microphone
   const [systemAudio, setSystemAudio] = usePersisted("systemAudio", false);
+  const [boostAudio, setBoostAudio] = usePersisted("boostAudio", true);
   const [outputName, setOutputName] = useState<string | null>(null);
   const [audioDevice, setAudioDevice] = usePersisted("audioDevice", "");
   const [folder, setFolder] = usePersisted("folder", "");
@@ -171,7 +172,7 @@ export default function App() {
     try {
       const list = await invoke<string[]>("list_audio_devices");
       setAudioDevices(list);
-      setAudioDevice((d) => (list.includes(d) ? d : list.find((x) => /stereo mix/i.test(x)) ?? list[0] ?? ""));
+      setAudioDevice((d) => (list.includes(d) ? d : list[0] ?? ""));
     } catch (e) {
       setError(problem(e));
     }
@@ -252,6 +253,7 @@ export default function App() {
           windowHwnd: m === "window" ? hwnd : null,
           audioDevice: audioOn ? audioDevice : null,
           systemAudio,
+          boostAudio,
           outputShortSide: resolution || null,
           drawMouse,
           showBorder,
@@ -616,6 +618,12 @@ export default function App() {
             ) : (
               <p className="advice">No microphones found. Plug one in, then turn this off and on again.</p>
             )
+          )}
+          {(systemAudio || audioOn) && (
+            <label className="switch">
+              <span>Boost quiet audio</span>
+              <input type="checkbox" checked={boostAudio} onChange={(e) => setBoostAudio(e.target.checked)} /><span className="track" />
+            </label>
           )}
 
           <h2>Save to</h2>

@@ -257,3 +257,17 @@ pub fn raise_topmost(h: Hwnd) {
     const SWP_SHOWWINDOW: u32 = 0x40;
     unsafe { SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW) };
 }
+
+#[link(name = "kernel32")]
+unsafe extern "system" {
+    fn SetPriorityClass(process: isize, class: u32) -> i32;
+}
+
+// Run a child process below normal priority, so the apps being recorded (a game, a
+// video) keep their smoothness when the CPU is busy; dropping a capture frame is better
+// than the source itself stuttering, which would end up in the recording anyway.
+pub fn lower_priority(child: &std::process::Child) {
+    use std::os::windows::io::AsRawHandle;
+    const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x4000;
+    unsafe { SetPriorityClass(child.as_raw_handle() as isize, BELOW_NORMAL_PRIORITY_CLASS) };
+}
